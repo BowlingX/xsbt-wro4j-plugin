@@ -1,0 +1,1 @@
+addSbtPlugin("com.bowlingx" %% "xsbt-wro4j" % "0.1.0-SNAPSHOT")

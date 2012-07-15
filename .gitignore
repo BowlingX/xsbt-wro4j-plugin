@@ -1,0 +1,15 @@
+target
+lib/target
+project/project
+project/target
+tmp
+# IDEA Ignores
+*.iml
+*.ipr
+*.iws
+.idea/
+local.properties
+data
+build-number.txt
+.history
+*.DS_Store
