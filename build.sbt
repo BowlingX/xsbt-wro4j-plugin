@@ -1,6 +1,6 @@
 organization := "com.bowlingx"
 
-name := "xsbt-wro4j"
+name := "xsbt-wro4j-plugin"
 
 version := "0.1.0-SNAPSHOT"
 
