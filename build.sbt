@@ -10,6 +10,8 @@ sbtPlugin := true
 
 ScriptedPlugin.scriptedSettings
 
+scriptedBufferLog := false
+
 libraryDependencies ++= Seq(
    "commons-logging" % "commons-logging" % "1.1.1" % "provided",
    "org.slf4j" % "log4j-over-slf4j" % "1.6.4",
