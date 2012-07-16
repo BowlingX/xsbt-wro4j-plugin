@@ -42,11 +42,11 @@ object Wro4jPlugin extends Plugin {
 
   object Wro4jKeys {
     // Tasks
-    val generateResources = TaskKey[Array[File]]("wro4j")
+    val generateResources = TaskKey[Array[File]]("wro4j", "Starts compiling all your definied Groups in wro.xml")
     // Settings
-    val wroFile = SettingKey[File]("wro-file")
-    val outputFolder = SettingKey[File]("output-folder")
-    val contextFolder = SettingKey[File]("context-folder")
+    val wroFile = SettingKey[File]("wro4j-file", "wro.xml File")
+    val outputFolder = SettingKey[File]("wro4j-output-folder", "Where are all those groups written?")
+    val contextFolder = SettingKey[File]("wro4j-context-folder", "Context Folder (your static resources root Dir)")
   }
 
   import Wro4jKeys._
@@ -88,8 +88,13 @@ object Wro4jPlugin extends Plugin {
         for {
           suffix <- ResourceType.values()
           groupName <- factory.getModelFactory.create().getGroupNames
-          val outputFileName = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+
+          val relative = outputFolder.getName
+          val outFile = "%s.%s" format (groupName, suffix.toString.toLowerCase)
+          val outputFileName =  "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
           val stream = {
+            out.log.info("Using relative Context: /%s" format relative)
+
             out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
             // Mock request, return current GroupName + Suffix
             val request = Mockito.mock(classOf[HttpServletRequest])
@@ -110,7 +115,7 @@ object Wro4jPlugin extends Plugin {
           if stream.length > 0
         } yield {
           outputFolder.mkdirs()
-          val output = outputFolder / outputFileName
+          val output = outputFolder / outFile
           out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
           IO.write(output, stream)
           // Return Generated Files (for further processing)
