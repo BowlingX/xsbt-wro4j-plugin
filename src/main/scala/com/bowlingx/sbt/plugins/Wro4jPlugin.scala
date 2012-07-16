@@ -1,3 +1,20 @@
+/**
+ * A SBT Plugin for wro4j (http://code.google.com/p/wro4j/)
+ *
+ * Copyright 2012 David Heidrich
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.bowlingx.sbt.plugins
 
 import sbt._
@@ -8,12 +25,11 @@ import ro.isdc.wro.config._
 import org.mockito.Mockito
 import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import ro.isdc.wro.http.support.DelegatingServletOutputStream
-import java.io.{ByteArrayOutputStream}
+import java.io.ByteArrayOutputStream
 import javax.servlet.FilterConfig
-import ro.isdc.wro.model.resource.processor.factory.{ConfigurableProcessorsFactory, DefaultProcesorsFactory}
+import ro.isdc.wro.model.resource.processor.factory.DefaultProcesorsFactory
 import ro.isdc.wro.model.resource.ResourceType
 import ro.isdc.wro.extensions.processor.css.LessCssProcessor
-import java.util.Properties
 
 /**
  * A Wro4j Plugin
@@ -32,7 +48,7 @@ object Wro4jPlugin extends Plugin {
 
   import Wro4jKeys._
 
-  private[this] def managerFactory(contextFolder:File, wroFile:File) = {
+  private[this] def managerFactory(contextFolder: File, wroFile: File) = {
     val context = new StandaloneContext()
     context.setIgnoreMissingResources(true)
     context.setContextFolder(contextFolder)
@@ -63,9 +79,9 @@ object Wro4jPlugin extends Plugin {
           suffix <- ResourceType.values()
           groupName <- factory.getModelFactory.create().getGroupNames
         } yield {
-          out.log.info("Processing Group: [%s] with type [%s]" format (groupName, suffix))
+          out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
           // Mock request, return current GroupName + Suffix
-          val outputFileName = "%s.%s" format (groupName, suffix)
+          val outputFileName = "%s.%s" format(groupName, suffix)
           val request = Mockito.mock(classOf[HttpServletRequest])
           Mockito.when(request.getRequestURI).thenReturn(outputFileName)
           // Mock Response, write everything in ByteArray instead of delivering to Browser :)
@@ -90,11 +106,11 @@ object Wro4jPlugin extends Plugin {
 
   val wro4jSettings = inConfig(Compile)(Seq(
     // Default WroFile
-    wroFile in generateResources <<= (sourceDirectory in Compile)( _ / "webapp" / "WEB-INF" / "wro.xml"),
+    wroFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.xml"),
     // Default ContextFolder
     contextFolder in generateResources <<= (sourceDirectory in Compile)(_ / "webapp"),
     // Default output Folder
-    outputFolder in generateResources <<= (target in Compile) (_ / "webapp" / "compiled"),
+    outputFolder in generateResources <<= (target in Compile)(_ / "webapp" / "compiled"),
     // Generate Task
     generateResources <<= lessCompilerTask,
     // Generate Resource task is invoked if compile
