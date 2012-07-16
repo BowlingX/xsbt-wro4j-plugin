@@ -27,9 +27,12 @@ import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import ro.isdc.wro.http.support.DelegatingServletOutputStream
 import java.io.ByteArrayOutputStream
 import javax.servlet.FilterConfig
-import ro.isdc.wro.model.resource.processor.factory.DefaultProcesorsFactory
+import ro.isdc.wro.model.resource.processor.factory.SimpleProcessorsFactory
 import ro.isdc.wro.model.resource.ResourceType
-import ro.isdc.wro.extensions.processor.css.LessCssProcessor
+import ro.isdc.wro.extensions.processor.css.{YUICssCompressorProcessor, LessCssProcessor}
+import ro.isdc.wro.model.resource.processor.impl.css.{CssVariablesProcessor, CssImportPreProcessor, CssUrlRewritingProcessor}
+import ro.isdc.wro.model.resource.processor.impl.js.{JSMinProcessor, SemicolonAppenderPreProcessor}
+import ro.isdc.wro.model.resource.processor.decorator.CopyrightKeeperProcessorDecorator
 
 /**
  * A Wro4j Plugin
@@ -59,8 +62,15 @@ object Wro4jPlugin extends Plugin {
       new ExtensionsStandaloneManagerFactory())
 
     managerFactory.initialize(context)
-    val processor = new DefaultProcesorsFactory()
-    processor.addPostProcessor(new LessCssProcessor())
+    val processor = new SimpleProcessorsFactory() {
+      addPreProcessor(new CssUrlRewritingProcessor())
+      addPreProcessor(new CssImportPreProcessor())
+      addPreProcessor(new SemicolonAppenderPreProcessor())
+      addPostProcessor(new LessCssProcessor())
+      addPostProcessor(new CssVariablesProcessor())
+      addPostProcessor(new YUICssCompressorProcessor())
+      addPreProcessor(CopyrightKeeperProcessorDecorator.decorate(new JSMinProcessor()))
+    }
     managerFactory.setProcessorsFactory(processor)
     managerFactory.create()
   }
@@ -78,33 +88,38 @@ object Wro4jPlugin extends Plugin {
         for {
           suffix <- ResourceType.values()
           groupName <- factory.getModelFactory.create().getGroupNames
+          val outputFileName = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+          val stream = {
+            out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
+            // Mock request, return current GroupName + Suffix
+            val request = Mockito.mock(classOf[HttpServletRequest])
+            Mockito.when(request.getRequestURI).thenReturn(outputFileName)
+            // Mock Response, write everything in ByteArray instead of delivering to Browser :)
+            val response = Mockito.mock(classOf[HttpServletResponse])
+            val createdOutputStream = new ByteArrayOutputStream()
+            Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
+
+            // Initilize WebContext
+            val conf = Context.get().getConfig
+            Context.set(Context.webContext(request, response, Mockito.mock(classOf[FilterConfig])), conf)
+
+            factory.process()
+
+            createdOutputStream.toByteArray
+          }
+          if stream.length > 0
         } yield {
-          out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
-          // Mock request, return current GroupName + Suffix
-          val outputFileName = "%s.%s" format(groupName, suffix)
-          val request = Mockito.mock(classOf[HttpServletRequest])
-          Mockito.when(request.getRequestURI).thenReturn(outputFileName)
-          // Mock Response, write everything in ByteArray instead of delivering to Browser :)
-          val response = Mockito.mock(classOf[HttpServletResponse])
-          val createdOutputStream = new ByteArrayOutputStream()
-          Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
-
-          //init context
-          val conf = Context.get().getConfig
-          Context.set(Context.webContext(request, response, Mockito.mock(classOf[FilterConfig])), conf)
-
-          factory.process()
-
           outputFolder.mkdirs()
-          IO.write(outputFolder / outputFileName, createdOutputStream.toByteArray)
-
+          val output = outputFolder / outputFileName
+          out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
+          IO.write(output, stream)
           // Return Generated Files (for further processing)
-          outputFolder / outputFileName
+          output
         }
     }
 
 
-  val wro4jSettings = inConfig(Compile)(Seq(
+  lazy val wro4jSettings = inConfig(Compile)(Seq(
     // Default WroFile
     wroFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.xml"),
     // Default ContextFolder
