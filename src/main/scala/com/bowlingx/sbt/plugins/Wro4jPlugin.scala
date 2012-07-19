@@ -25,14 +25,12 @@ import ro.isdc.wro.config._
 import org.mockito.Mockito
 import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import ro.isdc.wro.http.support.DelegatingServletOutputStream
-import java.io.ByteArrayOutputStream
+import java.io.{FileInputStream, ByteArrayOutputStream}
 import javax.servlet.FilterConfig
-import ro.isdc.wro.model.resource.processor.factory.SimpleProcessorsFactory
+import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactory
 import ro.isdc.wro.model.resource.ResourceType
-import ro.isdc.wro.extensions.processor.css.{YUICssCompressorProcessor, LessCssProcessor}
-import ro.isdc.wro.model.resource.processor.impl.css.{CssVariablesProcessor, CssImportPreProcessor, CssUrlRewritingProcessor}
-import ro.isdc.wro.model.resource.processor.impl.js.{JSMinProcessor, SemicolonAppenderPreProcessor}
-import ro.isdc.wro.model.resource.processor.decorator.CopyrightKeeperProcessorDecorator
+import java.util.Properties
+import wro4j.CommonProcessorProvider
 
 /**
  * A Wro4j Plugin
@@ -45,13 +43,14 @@ object Wro4jPlugin extends Plugin {
     val generateResources = TaskKey[Array[File]]("wro4j", "Starts compiling all your definied Groups in wro.xml")
     // Settings
     val wroFile = SettingKey[File]("wro4j-file", "wro.xml File")
-    val outputFolder = SettingKey[File]("wro4j-output-folder", "Where are all those groups written?")
+    val outputFolder = SettingKey[String]("wro4j-output-folder", "Where are all those groups written? Relative to contextFolder")
     val contextFolder = SettingKey[File]("wro4j-context-folder", "Context Folder (your static resources root Dir)")
+    val propertiesFile = SettingKey[File]("wro4j-properties", "wro.properties File")
   }
 
   import Wro4jKeys._
 
-  private[this] def managerFactory(contextFolder: File, wroFile: File) = {
+  private[this] def managerFactory(contextFolder: File, wroFile: File, propertiesFile: File) = {
     val context = new StandaloneContext()
     context.setIgnoreMissingResources(true)
     context.setContextFolder(contextFolder)
@@ -60,38 +59,38 @@ object Wro4jPlugin extends Plugin {
 
     val managerFactory = new InjectableContextAwareManagerFactory(
       new ExtensionsStandaloneManagerFactory())
+    val configurable = new ConfigurableProcessorsFactory()
+    val props = new Properties()
+    props.load(new FileInputStream(propertiesFile))
+    configurable.setProperties(props)
+
+    val pc = new CommonProcessorProvider
+    configurable.setPostProcessorsMap(pc.providePostProcessors())
+    configurable.setPreProcessorsMap(pc.providePreProcessors())
 
     managerFactory.initialize(context)
-    val processor = new SimpleProcessorsFactory() {
-      addPreProcessor(new CssUrlRewritingProcessor())
-      addPreProcessor(new CssImportPreProcessor())
-      addPreProcessor(new SemicolonAppenderPreProcessor())
-      addPostProcessor(new LessCssProcessor())
-      addPostProcessor(new CssVariablesProcessor())
-      addPostProcessor(new YUICssCompressorProcessor())
-      addPreProcessor(CopyrightKeeperProcessorDecorator.decorate(new JSMinProcessor()))
-    }
-    managerFactory.setProcessorsFactory(processor)
+
+    managerFactory.setProcessorsFactory(configurable)
     managerFactory.create()
   }
 
   private def lessCompilerTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
-      wroFile in generateResources, contextFolder in generateResources) map {
-      (out, sourcesDir, outputFolder, wroFile, contextFolder) =>
+      wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources, target in Compile) map {
+      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder) =>
         out.log.info("Generating Web-Resources")
 
         Context.set(Context.standaloneContext())
 
         import scala.collection.JavaConversions._
-        val factory = managerFactory(contextFolder, wroFile)
+        val factory = managerFactory(contextFolder, wroFile, propertiesFile)
         for {
           suffix <- ResourceType.values()
           groupName <- factory.getModelFactory.create().getGroupNames
 
-          val relative = outputFolder.getName
-          val outFile = "%s.%s" format (groupName, suffix.toString.toLowerCase)
-          val outputFileName =  "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
+          val relative = outputFolder
+          val outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+          val outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
           val stream = {
             out.log.info("Using relative Context: /%s" format relative)
 
@@ -114,8 +113,9 @@ object Wro4jPlugin extends Plugin {
           }
           if stream.length > 0
         } yield {
-          outputFolder.mkdirs()
-          val output = outputFolder / outFile
+          val t = targetFolder / "webapp" / outputFolder
+          t mkdirs()
+          val output = t / outFile
           out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
           IO.write(output, stream)
           // Return Generated Files (for further processing)
@@ -129,8 +129,11 @@ object Wro4jPlugin extends Plugin {
     wroFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.xml"),
     // Default ContextFolder
     contextFolder in generateResources <<= (sourceDirectory in Compile)(_ / "webapp"),
-    // Default output Folder
-    outputFolder in generateResources <<= (target in Compile)(_ / "webapp" / "compiled"),
+    // Default output Folder (relative Path)
+    outputFolder in generateResources := "compiled/",
+    // Properties
+    propertiesFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.properties"),
+
     // Generate Task
     generateResources <<= lessCompilerTask,
     // Generate Resource task is invoked if compile
