@@ -1,4 +1,4 @@
 # check if the file gets created
-> wro4j
+> package
 $ exists target/webapp/compiled/styles.css
 $ exists target/webapp/compiled/scripts.js

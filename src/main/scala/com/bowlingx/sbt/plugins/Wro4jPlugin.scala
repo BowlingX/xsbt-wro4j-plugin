@@ -18,7 +18,7 @@
 package com.bowlingx.sbt.plugins
 
 import sbt._
-import Keys._
+import sbt.Keys.{`package` => pack, _}
 import ro.isdc.wro.manager.factory.standalone.{InjectableContextAwareManagerFactory, StandaloneContext}
 import ro.isdc.wro.extensions.manager.standalone.ExtensionsStandaloneManagerFactory
 import ro.isdc.wro.config._
@@ -57,7 +57,7 @@ object Wro4jPlugin extends Plugin {
     val outputFolder = SettingKey[String]("wro4j-output-folder", "Where are all those groups written? Relative to contextFolder")
     val contextFolder = SettingKey[File]("wro4j-context-folder", "Context Folder (your static resources root Dir)")
     val propertiesFile = SettingKey[File]("wro4j-properties", "wro.properties File")
-    val processorProvider = SettingKey[ConfigurableProviderSupport]("wro4j-processor-provider", "AdditionalProviders$ class that provides Processor, should extend " +
+    val processorProvider = SettingKey[ConfigurableProviderSupport]("wro4j-processor-provider", "A class that provides Processors, should extend " +
       "ro.isdc.wro.util.provider.ConfigurableProviderSupport, uses com.bowlingx.sbt.plugins.wro4j.Processors as default")
   }
 
@@ -88,7 +88,7 @@ object Wro4jPlugin extends Plugin {
     managerFactory.create()
   }
 
-  private def lessCompilerTask =
+  protected def wro4jStartTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
       wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
       target in Compile, processorProvider in generateResources) map {
@@ -107,7 +107,7 @@ object Wro4jPlugin extends Plugin {
           val outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
           val outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
           val stream = {
-            out.log.info("Using relative Context: /%s" format relative)
+            out.log.info("Using relative Context: /%s%s" format (relative, outFile))
 
             out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
             // Mock request, return current GroupName + Suffix
@@ -128,7 +128,7 @@ object Wro4jPlugin extends Plugin {
           }
           if stream.length > 0
         } yield {
-          val t = targetFolder / "webapp" / outputFolder
+          val t = targetFolder / outputFolder
           t mkdirs()
           val output = t / outFile
           out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
@@ -145,15 +145,15 @@ object Wro4jPlugin extends Plugin {
     // Default ContextFolder
     contextFolder in generateResources <<= (sourceDirectory in Compile)(_ / "webapp"),
     // Default output Folder (relative Path to contextFolder)
-    outputFolder in generateResources := "compiled/",
+    outputFolder in generateResources := "webapp/compiled/",
     // wro4j Properties file
     propertiesFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.properties"),
     // Processor Provider (provides wro4j processors to use in wro.properties)
     processorProvider in generateResources := new Processors,
     // Generate Task
-    generateResources <<= lessCompilerTask,
-    // Generate Resource task is invoked if compile
-    compile in Compile <<= (compile in Compile) dependsOn (generateResources in Compile)
+    generateResources <<= wro4jStartTask,
+    // Generate Resource task is invoked if package command is invoked
+    pack in Compile <<= (pack in Compile) dependsOn (generateResources in Compile)
   ))
 
 
