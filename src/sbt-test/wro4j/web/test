@@ -1,4 +1,4 @@
 # check if the file gets created
-> wro4j
-$ exists target/webapp/compiled/bootstrap.css
-$ exists target/webapp/compiled/bootstrap.js
+> package
+$ exists target/wro4j/compiled/bootstrap.css
+$ exists target/wro4j/compiled/bootstrap.js
