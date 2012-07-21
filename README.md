@@ -57,7 +57,7 @@ The current implementation reads those provider informations (shortcuts) from cl
 You can easily provide your custom Provider if you override  `processorProvider in generateResources` e.g.
 
 ```scala
-  (processorProvider in generateResources in Compile := new MyCustomProviderForProcessors)
+  (processorProvider in generateResources in Compile) := new MyCustomProviderForProcessors
 ```
 
 The current build in provider creates the following pre and post processors (will be extended):
