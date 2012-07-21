@@ -30,13 +30,24 @@ import javax.servlet.FilterConfig
 import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactory
 import ro.isdc.wro.model.resource.ResourceType
 import java.util.Properties
-import wro4j.CommonProcessorProvider
+import ro.isdc.wro.util.provider.ConfigurableProviderSupport
 
 /**
- * A Wro4j Plugin
+ * A wro4j SBT Plugin
+ *
+ * {{{
+ *   // In your build.sbt do:
+ *
+ *   import com.bowlingx.sbt.plugins.Wro4jPlugin._
+ *
+ *   seq(wro4jSettings:_*)
+ *
+ * }}}
+ *
  */
-
 object Wro4jPlugin extends Plugin {
+
+  import wro4j._
 
   object Wro4jKeys {
     // Tasks
@@ -46,27 +57,30 @@ object Wro4jPlugin extends Plugin {
     val outputFolder = SettingKey[String]("wro4j-output-folder", "Where are all those groups written? Relative to contextFolder")
     val contextFolder = SettingKey[File]("wro4j-context-folder", "Context Folder (your static resources root Dir)")
     val propertiesFile = SettingKey[File]("wro4j-properties", "wro.properties File")
+    val processorProvider = SettingKey[ConfigurableProviderSupport]("wro4j-processor-provider", "AdditionalProviders$ class that provides Processor, should extend " +
+      "ro.isdc.wro.util.provider.ConfigurableProviderSupport, uses com.bowlingx.sbt.plugins.wro4j.Processors as default")
   }
 
   import Wro4jKeys._
 
-  private[this] def managerFactory(contextFolder: File, wroFile: File, propertiesFile: File) = {
+  case class Manager(contextFolder: File, wroFile: File, propertiesFile: File, provider:ConfigurableProviderSupport)
+
+  private[this] def managerFactory(m:Manager) = {
     val context = new StandaloneContext()
     context.setIgnoreMissingResources(true)
-    context.setContextFolder(contextFolder)
-    context.setWroFile(wroFile)
+    context.setContextFolder(m.contextFolder)
+    context.setWroFile(m.wroFile)
     context.setMinimize(true)
 
     val managerFactory = new InjectableContextAwareManagerFactory(
       new ExtensionsStandaloneManagerFactory())
     val configurable = new ConfigurableProcessorsFactory()
     val props = new Properties()
-    props.load(new FileInputStream(propertiesFile))
+    props.load(new FileInputStream(m.propertiesFile))
     configurable.setProperties(props)
 
-    val pc = new CommonProcessorProvider
-    configurable.setPostProcessorsMap(pc.providePostProcessors())
-    configurable.setPreProcessorsMap(pc.providePreProcessors())
+    configurable.setPostProcessorsMap(m.provider.providePostProcessors())
+    configurable.setPreProcessorsMap(m.provider.providePreProcessors())
 
     managerFactory.initialize(context)
 
@@ -76,14 +90,15 @@ object Wro4jPlugin extends Plugin {
 
   private def lessCompilerTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
-      wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources, target in Compile) map {
-      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder) =>
-        out.log.info("Generating Web-Resources")
+      wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
+      target in Compile, processorProvider in generateResources) map {
+      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider) =>
+        out.log.info("wro4j: == Generating Web-Resources ==")
 
         Context.set(Context.standaloneContext())
 
         import scala.collection.JavaConversions._
-        val factory = managerFactory(contextFolder, wroFile, propertiesFile)
+        val factory = managerFactory(Manager(contextFolder, wroFile, propertiesFile, processorProvider))
         for {
           suffix <- ResourceType.values()
           groupName <- factory.getModelFactory.create().getGroupNames
@@ -129,11 +144,12 @@ object Wro4jPlugin extends Plugin {
     wroFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.xml"),
     // Default ContextFolder
     contextFolder in generateResources <<= (sourceDirectory in Compile)(_ / "webapp"),
-    // Default output Folder (relative Path)
+    // Default output Folder (relative Path to contextFolder)
     outputFolder in generateResources := "compiled/",
-    // Properties
+    // wro4j Properties file
     propertiesFile in generateResources <<= (sourceDirectory in Compile)(_ / "webapp" / "WEB-INF" / "wro.properties"),
-
+    // Processor Provider (provides wro4j processors to use in wro.properties)
+    processorProvider in generateResources := new Processors,
     // Generate Task
     generateResources <<= lessCompilerTask,
     // Generate Resource task is invoked if compile

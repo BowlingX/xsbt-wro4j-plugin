@@ -9,19 +9,29 @@ import ro.isdc.wro.model.resource.processor.decorator.{ProcessorDecorator, Copyr
 import scala.collection.JavaConverters._
 import ro.isdc.wro.model.resource.processor.{ResourcePostProcessor, ResourcePreProcessor}
 
-class CommonProcessorProvider extends ConfigurableProviderSupport {
+/**
+ * Provides Common wro4j Processors for daily use :)
+ *
+ * You may create your own provider and extend this class
+ * (overwrite [[com.bowlingx.sbt.plugins.wro4j.Processors.processors]])
+ */
+class Processors extends ConfigurableProviderSupport {
 
-  object A {
+  object AdditionalProviders {
     val COPYRIGHT_KEEPER = "copyrightMin"
   }
 
-  import A._
+  import AdditionalProviders._
 
   override def providePreProcessors() = mapAsJavaMapConverter(processors).asJava
 
   override def providePostProcessors() = mapAsJavaMapConverter(
     processors.map(v => v._1 -> new ProcessorDecorator(v._2).asInstanceOf[ResourcePostProcessor])).asJava
 
+  /**
+   * A list of usefull default Providers
+   * @return
+   */
   protected def processors: HashMap[String, ResourcePreProcessor] = {
     HashMap(
       CssUrlRewritingProcessor.ALIAS -> new CssUrlRewritingProcessor(),
