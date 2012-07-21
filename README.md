@@ -70,12 +70,43 @@ The current build in provider creates the following pre and post processors (wil
 * CopyrightKeeperProcessorDecorator with JSMinProcessor
 * YUICssCompressorProcessor
 
-Example properties File with all available processors:
+### Example properties file with all available processors:
 
 ```
 preProcessors = cssUrlRewriting,cssImport,semicolonAppender,lessCss
 postProcessors = yuiCssMin,copyrightMin
 ```
+
+
+### Example wro.xml
+
+```xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<groups xmlns="http://www.isdc.ro/wro"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.isdc.ro/wro wro.xsd">
+
+    <group name="styles">
+        <css>/static/styles/base.less</css>
+    </group>
+
+    <group name="scripts">
+        <js>/static/js/first.js</js>
+        <js>/static/js/second.js</js>
+    </group>
+
+</groups>
+
+```
+
+## Run compilation
+
+This plugin depends on `package` and will then compile all your defined groups for you.
+You also can compile you assets manually if you invoke `wro4j`.
+
+All assets are written to `target/wro4j/compiled/` by default.
+
 
 ## License
 http://www.apache.org/licenses/LICENSE-2.0
