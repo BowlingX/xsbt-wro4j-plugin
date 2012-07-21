@@ -105,7 +105,8 @@ postProcessors = yuiCssMin,copyrightMin
 This plugin depends on `package` and will then compile all your defined groups for you.
 You also can compile you assets manually if you invoke `wro4j`.
 
-All assets are written to `target/wro4j/compiled/` by default.
+All assets are written to `target/wro4j/compiled/` by default. If you use `xsbt-web-plugin` and package a `war` file,
+your assets will be available in webapp/compiled/groupName.groupSuffix
 
 
 ## License
