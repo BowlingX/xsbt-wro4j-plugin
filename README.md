@@ -1,4 +1,4 @@
-xsbt-wro4j-plugin
+xsbt-wro4j-plugin [![Build Status](https://buildhive.cloudbees.com/job/BowlingX/job/xsbt-wro4j-plugin/badge/icon)](https://buildhive.cloudbees.com/job/BowlingX/job/xsbt-wro4j-plugin/)
 ==========
 
 This plugin provides a Wrapper for http://code.google.com/p/wro4j/
@@ -8,7 +8,7 @@ http://code.google.com/p/wro4j/source/browse/wro4j-maven-plugin/
 
 ## Requirements
 
-* sbt 0.11.x
+* sbt 0.11.3
 
 ## Example
 
