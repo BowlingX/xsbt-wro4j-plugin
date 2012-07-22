@@ -1,4 +1,4 @@
-xsbt-wro4j-plugin [![Build Status](https://secure.travis-ci.org/BowlingX/xsbt-wro4j-plugin.png?branch=master)](http://travis-ci.org/BowlingX/xsbt-wro4j-plugin)
+xsbt-wro4j-plugin [![Build Status](https://jenkins.backchat.io/job/xsbt-wro4j-plugin/badge/icon)](https://jenkins.backchat.io/job/xsbt-wro4j-plugin/)
 ==========
 
 This plugin provides a Wrapper for http://code.google.com/p/wro4j/
