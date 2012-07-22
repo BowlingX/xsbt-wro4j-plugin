@@ -62,6 +62,9 @@ The current build in provider creates the following pre and post processors (wil
 * CssDataUriPreProcessor
 * CopyrightKeeperProcessorDecorator with JSMinProcessor
 * YUICssCompressorProcessor
+* CoffeeScriptProcessor
+* SassCssProcessor
+* CssDataUriPreProcessor
 
 ### Example properties file with all available processors:
 

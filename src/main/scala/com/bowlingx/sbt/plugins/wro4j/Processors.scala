@@ -21,10 +21,12 @@ import ro.isdc.wro.util.provider.ConfigurableProviderSupport
 import collection.immutable.HashMap
 import ro.isdc.wro.model.resource.processor.impl.css._
 import ro.isdc.wro.model.resource.processor.impl.js.{JSMinProcessor, SemicolonAppenderPreProcessor}
-import ro.isdc.wro.extensions.processor.css.{YUICssCompressorProcessor, LessCssProcessor}
+import ro.isdc.wro.extensions.processor.css.{SassCssProcessor, YUICssCompressorProcessor, LessCssProcessor}
 import ro.isdc.wro.model.resource.processor.decorator.{ProcessorDecorator, CopyrightKeeperProcessorDecorator}
 import scala.collection.JavaConverters._
 import ro.isdc.wro.model.resource.processor.{ResourcePostProcessor, ResourcePreProcessor}
+import ro.isdc.wro.extensions.processor.js.CoffeeScriptProcessor
+import ro.isdc.wro.extensions.processor.js
 
 /**
  * Provides Common wro4j Processors for daily use :)
@@ -57,7 +59,10 @@ class Processors extends ConfigurableProviderSupport {
       LessCssProcessor.ALIAS -> new LessCssProcessor(),
       CssDataUriPreProcessor.ALIAS -> new CssDataUriPreProcessor(),
       COPYRIGHT_KEEPER -> CopyrightKeeperProcessorDecorator.decorate(new JSMinProcessor()),
-      YUICssCompressorProcessor.ALIAS -> new YUICssCompressorProcessor()
+      YUICssCompressorProcessor.ALIAS -> new YUICssCompressorProcessor(),
+      CoffeeScriptProcessor.ALIAS -> new CoffeeScriptProcessor(),
+      SassCssProcessor.ALIAS -> new SassCssProcessor(),
+      CssDataUriPreProcessor.ALIAS -> new CssDataUriPreProcessor()
     )
   }
 }

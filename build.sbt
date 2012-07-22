@@ -47,12 +47,12 @@ packageOptions <<= (packageOptions, name, version, organization) map {
       "Built-By" -> System.getProperty("user.name"),
       "Build-Jdk" -> System.getProperty("java.version"),
       "Specification-Title" -> title,
-      "Specification-Vendor" -> "Scalatra",
+      "Specification-Vendor" -> "BowlingX",
       "Specification-Version" -> version,
       "Implementation-Title" -> title,
       "Implementation-Version" -> version,
       "Implementation-Vendor-Id" -> vendor,
-      "Implementation-Vendor" -> "Scalatra",
+      "Implementation-Vendor" -> "BowlingX",
       "Implementation-Url" -> "https://github.com/BowlingX/xsbt-wro4j-plugin"
      )
 }
