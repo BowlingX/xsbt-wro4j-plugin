@@ -53,15 +53,15 @@ packageOptions <<= (packageOptions, name, version, organization) map {
       "Implementation-Version" -> version,
       "Implementation-Vendor-Id" -> vendor,
       "Implementation-Vendor" -> "Scalatra",
-      "Implementation-Url" -> "https://github.com/scalatra/sbt-requirejs"
+      "Implementation-Url" -> "https://github.com/BowlingX/xsbt-wro4j-plugin"
      )
 }
 
-homepage := Some(url("https://github.com/scalatra/sbt-requirejs"))
+homepage := Some(url("https://github.com/BowlingX/xsbt-wro4j-plugin"))
 
 startYear := Some(2012)
 
-licenses := Seq(("MIT", url("http://github.com/scalatra/sbt-requirejs/raw/HEAD/LICENSE")))
+licenses := Seq(("Apache 2.0", url("https://github.com/BowlingX/xsbt-wro4j-plugin/raw/HEAD/LICENSE")))
 
 pomExtra <<= (pomExtra, name, description) {(pom, name, desc) => pom ++ Group(
   <scm>
