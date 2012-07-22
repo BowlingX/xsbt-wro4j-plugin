@@ -12,20 +12,13 @@ http://code.google.com/p/wro4j/source/browse/wro4j-maven-plugin/
 
 ## Example
 
-I currently don't have any repository available, so please just do publish-local for testing
-I will publish it as soon as possible
-
-```
- git pull git://github.com/BowlingX/xsbt-wro4j-plugin.git
- sbt publish-local
-
- // Run Tests (if you like :)):
- sbt scripted
-```
-
 In your project/plugins.sbt add:
 
 ```scala
+
+resolvers += Resolver.url("sbt-plugin-snapshots",
+  new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-snapshots/"))(
+    Resolver.ivyStylePatterns)
 
 addSbtPlugin("com.bowlingx" %% "xsbt-wro4j-plugin" % "0.1.0-SNAPSHOT")
 
