@@ -92,9 +92,9 @@ object Wro4jPlugin extends Plugin {
   def wro4jStartTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
       wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
-      targetFolder in generateResources, processorProvider in generateResources) map {
-      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider) =>
-        out.log.info("wro4j: == Generating Web-Resources ==")
+      targetFolder in generateResources, processorProvider in generateResources, name in generateResources) map {
+      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider, projectName) =>
+        out.log.info("wro4j: == Generating Web-Resources for %s ==" format projectName)
 
         Context.set(Context.standaloneContext())
 

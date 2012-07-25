@@ -26,7 +26,6 @@ import ro.isdc.wro.model.resource.processor.decorator.{ProcessorDecorator, Copyr
 import scala.collection.JavaConverters._
 import ro.isdc.wro.model.resource.processor.{ResourcePostProcessor, ResourcePreProcessor}
 import ro.isdc.wro.extensions.processor.js.CoffeeScriptProcessor
-import ro.isdc.wro.extensions.processor.js
 
 /**
  * Provides Common wro4j Processors for daily use :)
