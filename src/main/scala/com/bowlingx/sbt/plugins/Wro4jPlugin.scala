@@ -110,11 +110,10 @@ object Wro4jPlugin extends Plugin {
           (for {
             suffix <- ResourceType.values()
             groupName <- factory.getModelFactory.create().getGroupNames
-
-            val relative = outputFolder
-            val outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
-            val outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
-            val stream = {
+            relative = outputFolder
+            outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+            outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
+            stream = {
               out.log.info("Using relative Context: /%s%s" format(relative, outFile))
 
               out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
@@ -132,15 +131,16 @@ object Wro4jPlugin extends Plugin {
 
               factory.process()
 
-              createdOutputStream.toByteArray
+              createdOutputStream
             }
-            if stream.length > 0
+            if stream.size > 0
           } yield {
             val t = targetFolder / outputFolder
             t mkdirs()
             val output = t / outFile
             out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
-            IO.write(output, stream)
+            IO.write(output, stream.toByteArray)
+            stream.close()
             // Return Generated Files (for further processing)
             output
           }).toSeq
