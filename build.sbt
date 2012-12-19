@@ -27,9 +27,8 @@ libraryDependencies ++= Seq(
    "org.specs2" %% "specs2" % "1.12" % "test",
    "org.mockito" % "mockito-core" % "1.9.0",
    "javax.servlet" % "javax.servlet-api" % "3.0.1",
-   "com.github.sommeri" % "less4j" % "0.0.4" excludeAll(ExclusionRule(organization = "org.slf4j")),
    "ro.isdc.wro4j" % "wro4j-core" % "1.6.1" excludeAll(ExclusionRule(organization = "org.slf4j")),
-   "ro.isdc.wro4j" % "wro4j-extensions" % "1.6.1" excludeAll(ExclusionRule(organization = "org.slf4j"))
+   "ro.isdc.wro4j" % "wro4j-extensions" % "1.6.1" excludeAll(ExclusionRule(organization = "org.slf4j"), ExclusionRule(organization = "com.github.sommeri"))
 )
 
 publishMavenStyle := false
