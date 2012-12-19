@@ -14,6 +14,8 @@ ScriptedPlugin.scriptedSettings
 
 scriptedBufferLog := false
 
+net.virtualvoid.sbt.graph.Plugin.graphSettings
+
 scalacOptions += "-unchecked"
 
 scalacOptions += "-deprecation"
@@ -21,7 +23,7 @@ scalacOptions += "-deprecation"
 libraryDependencies ++= Seq(
    "commons-logging" % "commons-logging" % "1.1.1" % "provided",
    "org.slf4j" % "log4j-over-slf4j" % "1.6.6",
-   "ch.qos.logback" % "logback-classic" % "1.0.2",
+   "ch.qos.logback" % "logback-classic" % "1.0.7",
    "org.specs2" %% "specs2" % "1.12" % "test",
    "org.mockito" % "mockito-core" % "1.9.0",
    "javax.servlet" % "javax.servlet-api" % "3.0.1",
