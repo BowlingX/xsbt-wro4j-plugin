@@ -31,7 +31,6 @@ import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactor
 import ro.isdc.wro.model.resource.ResourceType
 import java.util.Properties
 import ro.isdc.wro.util.provider.ConfigurableProviderSupport
-import ro.isdc.wro.model.WroModelInspector
 
 /**
  * A wro4j SBT Plugin
@@ -110,7 +109,7 @@ object Wro4jPlugin extends Plugin {
 
           (for {
             suffix <- ResourceType.values()
-            groupName <- new WroModelInspector(factory.getModelFactory.create()).getGroupNames
+            groupName <- factory.getModelFactory.create().getGroupNames
             relative = outputFolder
             outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
             outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
