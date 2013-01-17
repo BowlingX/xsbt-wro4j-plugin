@@ -8,7 +8,7 @@ http://code.google.com/p/wro4j/source/browse/wro4j-maven-plugin/
 
 ## Requirements
 
-* sbt 0.11.3 or 0.12
+* sbt 0.12
 
 ## Example
 
