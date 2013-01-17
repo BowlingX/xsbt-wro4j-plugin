@@ -6,8 +6,6 @@ name := "xsbt-wro4j-plugin"
 
 version := "0.1.0"
 
-crossScalaVersions := Seq("2.9.2", "2.10.0")
-
 sbtPlugin := true
 
 ScriptedPlugin.scriptedSettings
