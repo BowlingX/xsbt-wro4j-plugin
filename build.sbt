@@ -6,7 +6,7 @@ name := "xsbt-wro4j-plugin"
 
 version := "0.1.0"
 
-scalaVersion := "2.9.2"
+crossScalaVersions := Seq("2.9.2", "2.10.0")
 
 sbtPlugin := true
 
@@ -24,7 +24,6 @@ libraryDependencies ++= Seq(
    "commons-logging" % "commons-logging" % "1.1.1" % "provided",
    "org.slf4j" % "log4j-over-slf4j" % "1.6.6",
    "ch.qos.logback" % "logback-classic" % "1.0.7",
-   "org.specs2" %% "specs2" % "1.12" % "test",
    "org.mockito" % "mockito-core" % "1.9.5",
    "javax.servlet" % "javax.servlet-api" % "3.0.1",
    "ro.isdc.wro4j" % "wro4j-core" % "1.6.2" excludeAll(ExclusionRule(organization = "org.slf4j")),
@@ -36,9 +35,9 @@ publishMavenStyle := false
 publishTo <<= (version) { version: String =>
    val scalasbt = "http://scalasbt.artifactoryonline.com/scalasbt/"
    val (name, url) = if (version.contains("-SNAPSHOT"))
-                       ("sbt-plugin-snapshots", scalasbt+"sbt-plugin-snapshots")
+                       ("scalasbt-sbt-plugin-snapshots", scalasbt+"sbt-plugin-snapshots")
                      else
-                       ("sbt-plugin-releases", scalasbt+"sbt-plugin-releases")
+                       ("scalasbt-sbt-plugin-releases", scalasbt+"sbt-plugin-releases")
    Some(Resolver.url(name, new URL(url))(Resolver.ivyStylePatterns))
 }
 
