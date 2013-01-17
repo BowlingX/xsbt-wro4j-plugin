@@ -4,7 +4,7 @@ organization := "com.bowlingx"
 
 name := "xsbt-wro4j-plugin"
 
-version := "0.1.0-SNAPSHOT"
+version := "0.1.0"
 
 scalaVersion := "2.9.2"
 
@@ -25,10 +25,10 @@ libraryDependencies ++= Seq(
    "org.slf4j" % "log4j-over-slf4j" % "1.6.6",
    "ch.qos.logback" % "logback-classic" % "1.0.7",
    "org.specs2" %% "specs2" % "1.12" % "test",
-   "org.mockito" % "mockito-core" % "1.9.0",
+   "org.mockito" % "mockito-core" % "1.9.5",
    "javax.servlet" % "javax.servlet-api" % "3.0.1",
-   "ro.isdc.wro4j" % "wro4j-core" % "1.4.9" excludeAll(ExclusionRule(organization = "org.slf4j")),
-   "ro.isdc.wro4j" % "wro4j-extensions" % "1.4.9" excludeAll(ExclusionRule(organization = "org.slf4j"))
+   "ro.isdc.wro4j" % "wro4j-core" % "1.6.2" excludeAll(ExclusionRule(organization = "org.slf4j")),
+   "ro.isdc.wro4j" % "wro4j-extensions" % "1.6.2" excludeAll(ExclusionRule(organization = "org.slf4j"))
 )
 
 publishMavenStyle := false

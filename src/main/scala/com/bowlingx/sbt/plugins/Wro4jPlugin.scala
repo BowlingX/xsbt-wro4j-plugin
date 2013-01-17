@@ -31,6 +31,8 @@ import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactor
 import ro.isdc.wro.model.resource.ResourceType
 import java.util.Properties
 import ro.isdc.wro.util.provider.ConfigurableProviderSupport
+import ro.isdc.wro.model.WroModelInspector
+import tools.nsc.util.ScalaClassLoader.URLClassLoader
 
 /**
  * A wro4j SBT Plugin
@@ -86,6 +88,7 @@ object Wro4jPlugin extends Plugin {
     managerFactory.initialize(context)
 
     managerFactory.setProcessorsFactory(configurable)
+
     managerFactory.create()
   }
 
@@ -95,6 +98,9 @@ object Wro4jPlugin extends Plugin {
       targetFolder in generateResources, processorProvider in generateResources, name in generateResources) map {
       (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider, projectName) =>
         out.log.info("wro4j: == Generating Web-Resources for %s ==" format projectName)
+
+        // Update context Classpath
+        Thread.currentThread().setContextClassLoader(classOf[ro.isdc.wro.config.ReadOnlyContext].getClassLoader)
 
         Context.set(Context.standaloneContext())
 
@@ -109,7 +115,7 @@ object Wro4jPlugin extends Plugin {
 
           (for {
             suffix <- ResourceType.values()
-            groupName <- factory.getModelFactory.create().getGroupNames
+            groupName <- new WroModelInspector(factory.getModelFactory.create()).getGroupNames
             relative = outputFolder
             outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
             outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
