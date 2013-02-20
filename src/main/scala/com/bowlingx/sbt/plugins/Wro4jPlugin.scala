@@ -19,7 +19,6 @@ package com.bowlingx.sbt.plugins
 
 import sbt._
 import sbt.Keys.{`package` => pack, _}
-import Process._
 import ro.isdc.wro.manager.factory.standalone.{InjectableContextAwareManagerFactory, StandaloneContext}
 import ro.isdc.wro.extensions.manager.standalone.ExtensionsStandaloneManagerFactory
 import ro.isdc.wro.config._
@@ -33,7 +32,6 @@ import ro.isdc.wro.model.resource.ResourceType
 import java.util.Properties
 import ro.isdc.wro.util.provider.ConfigurableProviderSupport
 import ro.isdc.wro.model.WroModelInspector
-import tools.nsc.util.ScalaClassLoader.URLClassLoader
 
 /**
  * A wro4j SBT Plugin
