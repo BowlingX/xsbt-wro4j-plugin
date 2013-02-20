@@ -19,6 +19,7 @@ package com.bowlingx.sbt.plugins
 
 import sbt._
 import sbt.Keys.{`package` => pack, _}
+import Process._
 import ro.isdc.wro.manager.factory.standalone.{InjectableContextAwareManagerFactory, StandaloneContext}
 import ro.isdc.wro.extensions.manager.standalone.ExtensionsStandaloneManagerFactory
 import ro.isdc.wro.config._
@@ -53,7 +54,7 @@ object Wro4jPlugin extends Plugin {
 
   object Wro4jKeys {
     // Tasks
-    lazy val generateResources = TaskKey[Seq[File]]("wro4j", "Starts compiling all your definied Groups in wro.xml")
+    lazy val generateResources = TaskKey[Set[File]]("wro4j", "Starts compiling all your defined Groups in wro.xml")
     // Settings
     lazy val targetFolder = SettingKey[File]("wro4j-target")
     lazy val wroFile = SettingKey[File]("wro4j-file", "wro.xml File")
@@ -95,8 +96,8 @@ object Wro4jPlugin extends Plugin {
   def wro4jStartTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
       wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
-      targetFolder in generateResources, processorProvider in generateResources, name in generateResources) map {
-      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider, projectName) =>
+      targetFolder in generateResources, processorProvider in generateResources, name in generateResources, cacheDirectory) map {
+      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider, projectName, cache) =>
         out.log.info("wro4j: == Generating Web-Resources for %s ==" format projectName)
 
         // Update context Classpath
@@ -109,50 +110,65 @@ object Wro4jPlugin extends Plugin {
         out.log.info("wro4j-properties-file: %s" format propertiesFile.getAbsolutePath)
 
         if (contextFolder.exists() && wroFile.exists() && propertiesFile.exists()) {
-
           import scala.collection.JavaConversions._
           val factory = managerFactory(Manager(contextFolder, wroFile, propertiesFile, processorProvider))
 
-          (for {
-            suffix <- ResourceType.values()
-            groupName <- new WroModelInspector(factory.getModelFactory.create()).getGroupNames
-            relative = outputFolder
-            outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
-            outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
-            stream = {
-              out.log.info("Using relative Context: /%s%s" format(relative, outFile))
+          val inspector = new WroModelInspector(factory.getModelFactory.create())
+          val allResources = inspector.getAllUniqueResources
 
-              out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
-              // Mock request, return current GroupName + Suffix
-              val request = Mockito.mock(classOf[HttpServletRequest])
-              Mockito.when(request.getRequestURI).thenReturn(outputFileName)
-              // Mock Response, write everything in ByteArray instead of delivering to Browser :)
-              val response = Mockito.mock(classOf[HttpServletResponse])
-              val createdOutputStream = new ByteArrayOutputStream()
-              Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
+          val cachedCompile = FileFunction.cached(cache / "xsbt-wro4j", inStyle = FilesInfo.lastModified,
+            outStyle = FilesInfo.exists) { (in: Set[File]) =>
+            // Find groups that did change
+            val groupNames = in.flatMap(r => {
+              val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath)
+              groupNames.toSet
+            })
+            // Generate resources for Groups:
+            (for {
+              suffix <- ResourceType.values()
+              groupName <- groupNames
+              relative = outputFolder
+              outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+              outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
+              stream = {
+                out.log.info("Using relative Context: /%s%s" format(relative, outFile))
 
-              // Initilize WebContext
-              val conf = Context.get().getConfig
-              Context.set(Context.webContext(request, response, Mockito.mock(classOf[FilterConfig])), conf)
+                out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
+                // Mock request, return current GroupName + Suffix
+                val request = Mockito.mock(classOf[HttpServletRequest])
+                Mockito.when(request.getRequestURI).thenReturn(outputFileName)
+                // Mock Response, write everything in ByteArray instead of delivering to Browser :)
+                val response = Mockito.mock(classOf[HttpServletResponse])
+                val createdOutputStream = new ByteArrayOutputStream()
+                Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
 
-              factory.process()
+                // Initilize WebContext
+                val conf = Context.get().getConfig
+                Context.set(Context.webContext(request, response, Mockito.mock(classOf[FilterConfig])), conf)
 
-              createdOutputStream
-            }
-            if stream.size > 0
-          } yield {
-            val t = targetFolder / outputFolder
-            t mkdirs()
-            val output = t / outFile
-            out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
-            IO.write(output, stream.toByteArray)
-            stream.close()
-            // Return Generated Files (for further processing)
-            output
-          }).toSeq
+                factory.process()
+
+                createdOutputStream
+              }
+              if stream.size > 0
+            } yield {
+              val t = targetFolder / outputFolder
+              t mkdirs()
+              val output = t / outFile
+              out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
+              IO.write(output, stream.toByteArray)
+              stream.close()
+              // Return Generated Files (for further processing)
+              output
+            }).toSet
+          }
+
+          // All potential changed files:
+          cachedCompile(allResources.map(r => new File(r.getUri)).get.toSet)
+
         } else {
           out.log.info("No wro4j configuration found (missing Resource Folders), skipping resource creation")
-          Seq.empty[File]
+          Set.empty[File]
         }
     }
 
@@ -174,6 +190,5 @@ object Wro4jPlugin extends Plugin {
     // Generate Resource task is invoked if package command is invoked
     pack in Compile <<= (pack in Compile) dependsOn (generateResources in Compile)
   ))
-
 
 }
