@@ -68,6 +68,7 @@ object Wro4jPlugin extends Plugin {
     lazy val propertiesFile = SettingKey[File]("wro4j-properties", "wro.properties File")
     lazy val processorProvider = SettingKey[ConfigurableProviderSupport]("wro4j-processor-provider", "A class that provides Processors, should extend " +
       "ro.isdc.wro.util.provider.ConfigurableProviderSupport, uses com.bowlingx.sbt.plugins.wro4j.Processors as default")
+    lazy val cacheFolder = SettingKey[File]("wro4j-cache-folder", "Folder where cached calculated files are stored")
   }
 
   import Wro4jKeys._
@@ -101,7 +102,7 @@ object Wro4jPlugin extends Plugin {
   def wro4jStartTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
       wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
-      targetFolder in generateResources, processorProvider in generateResources, name in generateResources, cacheDirectory) map {
+      targetFolder in generateResources, processorProvider in generateResources, name in generateResources, cacheFolder in generateResources) map {
       (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider, projectName, cache) =>
         out.log.info("wro4j: == Generating Web-Resources for %s ==" format projectName)
 
@@ -121,7 +122,7 @@ object Wro4jPlugin extends Plugin {
           val inspector = new WroModelInspector(factory.getModelFactory.create())
           val allResources = inspector.getAllUniqueResources
 
-          val cachedCompile = FileFunction.cached(cache / "xsbt-wro4j")(inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) {
+          val cachedCompile = FileFunction.cached(cache)(inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) {
             (in:ChangeReport[File], outFiles:ChangeReport[File]) =>
 
             // Find groups that did change
@@ -199,6 +200,8 @@ object Wro4jPlugin extends Plugin {
     processorProvider in generateResources := new Processors,
     // Generate Task
     generateResources <<= wro4jStartTask,
+    // Folder for cached Objects
+    cacheFolder in generateResources <<= (cacheDirectory)(_ / "xsbt-wro4j"),
     // Generate Resource task is invoked if package command is invoked
     pack in Compile <<= (pack in Compile) dependsOn (generateResources in Compile)
   ))
