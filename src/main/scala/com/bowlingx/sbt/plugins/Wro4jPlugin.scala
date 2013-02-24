@@ -119,7 +119,6 @@ object Wro4jPlugin extends Plugin {
 
             // Find groups that did change
             val groupNames = in.flatMap(r => {
-              out.log.info(r.getAbsolutePath)
               // We need to replace the context path with found file path before wro4j work's with relative path
               val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
               groupNames.toSet
