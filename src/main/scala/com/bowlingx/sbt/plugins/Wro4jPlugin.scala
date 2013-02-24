@@ -29,9 +29,10 @@ import java.io.{FileInputStream, ByteArrayOutputStream}
 import javax.servlet.FilterConfig
 import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactory
 import ro.isdc.wro.model.resource.ResourceType
-import java.util.Properties
+import java.util.{Calendar, Properties}
 import ro.isdc.wro.util.provider.ConfigurableProviderSupport
 import ro.isdc.wro.model.WroModelInspector
+import org.joda.time.DateTime
 
 /**
  * A wro4j SBT Plugin
@@ -47,6 +48,12 @@ import ro.isdc.wro.model.WroModelInspector
  *
  */
 object Wro4jPlugin extends Plugin {
+
+  case class Group(name:String, lastChanged:java.util.Date)
+
+  import scala.collection._
+
+  val changedGroupsTracking:mutable.Map[String, Group] = mutable.Map.empty[String, Group]
 
   import wro4j._
 
@@ -114,15 +121,17 @@ object Wro4jPlugin extends Plugin {
           val inspector = new WroModelInspector(factory.getModelFactory.create())
           val allResources = inspector.getAllUniqueResources
 
-          val cachedCompile = FileFunction.cached(cache / "xsbt-wro4j", inStyle = FilesInfo.lastModified,
-            outStyle = FilesInfo.exists) { (in: Set[File]) =>
+          val cachedCompile = FileFunction.cached(cache / "xsbt-wro4j")(inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) {
+            (in:ChangeReport[File], outFiles:ChangeReport[File]) =>
 
             // Find groups that did change
-            val groupNames = in.flatMap(r => {
+            val groupNames = in.modified.flatMap(r => {
               // We need to replace the context path with found file path before wro4j work's with relative path
               val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
+
               groupNames.toSet
             })
+
             // Generate resources for Groups:
             (for {
               suffix <- ResourceType.values()
