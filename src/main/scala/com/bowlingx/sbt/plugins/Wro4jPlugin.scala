@@ -116,9 +116,12 @@ object Wro4jPlugin extends Plugin {
 
           val cachedCompile = FileFunction.cached(cache / "xsbt-wro4j", inStyle = FilesInfo.lastModified,
             outStyle = FilesInfo.exists) { (in: Set[File]) =>
+
             // Find groups that did change
             val groupNames = in.flatMap(r => {
-              val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath)
+              out.log.info(r.getAbsolutePath)
+              // We need to replace the context path with found file path before wro4j work's with relative path
+              val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
               groupNames.toSet
             })
             // Generate resources for Groups:
@@ -162,7 +165,10 @@ object Wro4jPlugin extends Plugin {
           }
 
           // All potential changed files:
-          cachedCompile(allResources.map(r => new File(r.getUri)).get.toSet)
+          cachedCompile(allResources.map { r =>
+            val wroResource = contextFolder / r.getUri
+            wroResource
+          }.get.toSet)
 
         } else {
           out.log.info("No wro4j configuration found (missing Resource Folders), skipping resource creation")
