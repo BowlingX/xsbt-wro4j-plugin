@@ -20,7 +20,7 @@ resolvers += Resolver.url("sbt-plugin-snapshots",
   new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-snapshots/"))(
     Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.bowlingx" %% "xsbt-wro4j-plugin" % "0.2.0-SNAPSHOT")
+addSbtPlugin("com.bowlingx" %% "xsbt-wro4j-plugin" % "0.3.0-SNAPSHOT")
 
 ```
 
