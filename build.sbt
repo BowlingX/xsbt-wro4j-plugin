@@ -26,8 +26,8 @@ libraryDependencies ++= Seq(
    "ch.qos.logback" % "logback-classic" % "1.0.7",
    "org.mockito" % "mockito-core" % "1.9.5",
    "javax.servlet" % "javax.servlet-api" % "3.0.1",
-   "ro.isdc.wro4j" % "wro4j-core" % "1.6.2" excludeAll(ExclusionRule(organization = "org.slf4j")),
-   "ro.isdc.wro4j" % "wro4j-extensions" % "1.6.2" excludeAll(ExclusionRule(organization = "org.slf4j"))
+   "ro.isdc.wro4j" % "wro4j-core" % "1.6.3" excludeAll(ExclusionRule(organization = "org.slf4j")),
+   "ro.isdc.wro4j" % "wro4j-extensions" % "1.6.3" excludeAll(ExclusionRule(organization = "org.slf4j"))
 )
 
 publishMavenStyle := false

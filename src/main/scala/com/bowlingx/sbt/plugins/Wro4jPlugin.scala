@@ -19,7 +19,7 @@ package com.bowlingx.sbt.plugins
 
 import sbt._
 import sbt.Keys.{`package` => pack, _}
-import ro.isdc.wro.manager.factory.standalone.{InjectableContextAwareManagerFactory, StandaloneContext}
+import ro.isdc.wro.manager.factory.standalone.StandaloneContext
 import ro.isdc.wro.extensions.manager.standalone.ExtensionsStandaloneManagerFactory
 import ro.isdc.wro.config._
 import org.mockito.Mockito
@@ -29,10 +29,9 @@ import java.io.{FileInputStream, ByteArrayOutputStream}
 import javax.servlet.FilterConfig
 import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactory
 import ro.isdc.wro.model.resource.ResourceType
-import java.util.{Calendar, Properties}
+import java.util.Properties
 import ro.isdc.wro.util.provider.ConfigurableProviderSupport
 import ro.isdc.wro.model.WroModelInspector
-import org.joda.time.DateTime
 
 /**
  * A wro4j SBT Plugin
@@ -49,11 +48,11 @@ import org.joda.time.DateTime
  */
 object Wro4jPlugin extends Plugin {
 
-  case class Group(name:String, lastChanged:java.util.Date)
+  case class Group(name: String, lastChanged: java.util.Date)
 
   import scala.collection._
 
-  val changedGroupsTracking:mutable.Map[String, Group] = mutable.Map.empty[String, Group]
+  val changedGroupsTracking: mutable.Map[String, Group] = mutable.Map.empty[String, Group]
 
   import wro4j._
 
@@ -82,8 +81,7 @@ object Wro4jPlugin extends Plugin {
     context.setWroFile(m.wroFile)
     context.setMinimize(true)
 
-    val managerFactory = new InjectableContextAwareManagerFactory(
-      new ExtensionsStandaloneManagerFactory())
+    val managerFactory = new ExtensionsStandaloneManagerFactory()
     val configurable = new ConfigurableProcessorsFactory()
     val props = new Properties()
     props.load(new FileInputStream(m.propertiesFile))
@@ -123,60 +121,61 @@ object Wro4jPlugin extends Plugin {
           val allResources = inspector.getAllUniqueResources
 
           val cachedCompile = FileFunction.cached(cache)(inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) {
-            (in:ChangeReport[File], outFiles:ChangeReport[File]) =>
+            (in: ChangeReport[File], outFiles: ChangeReport[File]) =>
 
             // Find groups that did change
-            val groupNames = in.modified.flatMap(r => {
-              // We need to replace the context path with found file path before wro4j work's with relative path
-              val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
+              val groupNames = in.modified.flatMap(r => {
+                // We need to replace the context path with found file path before wro4j work's with relative path
+                val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
 
-              groupNames.toSet
-            })
+                groupNames.toSet
+              })
 
-            // Generate resources for Groups:
-            (for {
-              suffix <- ResourceType.values()
-              groupName <- groupNames
-              relative = outputFolder
-              outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
-              outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
-              stream = {
-                out.log.info("Using relative Context: /%s%s" format(relative, outFile))
+              // Generate resources for Groups:
+              (for {
+                suffix <- ResourceType.values()
+                groupName <- groupNames
+                relative = outputFolder
+                outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+                outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
+                stream = {
+                  out.log.info("Using relative Context: /%s%s" format(relative, outFile))
 
-                out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
-                // Mock request, return current GroupName + Suffix
-                val request = Mockito.mock(classOf[HttpServletRequest])
-                Mockito.when(request.getRequestURI).thenReturn(outputFileName)
-                // Mock Response, write everything in ByteArray instead of delivering to Browser :)
-                val response = Mockito.mock(classOf[HttpServletResponse])
-                val createdOutputStream = new ByteArrayOutputStream()
-                Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
+                  out.log.info("Processing Group: [%s] with type [%s]" format(groupName, suffix))
+                  // Mock request, return current GroupName + Suffix
+                  val request = Mockito.mock(classOf[HttpServletRequest])
+                  Mockito.when(request.getRequestURI).thenReturn(outputFileName)
+                  // Mock Response, write everything in ByteArray instead of delivering to Browser :)
+                  val response = Mockito.mock(classOf[HttpServletResponse])
+                  val createdOutputStream = new ByteArrayOutputStream()
+                  Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
 
-                // Initilize WebContext
-                val conf = Context.get().getConfig
-                Context.set(Context.webContext(request, response, Mockito.mock(classOf[FilterConfig])), conf)
+                  // Initilize WebContext
+                  val conf = Context.get().getConfig
+                  Context.set(Context.webContext(request, response, Mockito.mock(classOf[FilterConfig])), conf)
 
-                factory.process()
+                  factory.process()
 
-                createdOutputStream
-              }
-              if stream.size > 0
-            } yield {
-              val t = targetFolder / outputFolder
-              t mkdirs()
-              val output = t / outFile
-              out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
-              IO.write(output, stream.toByteArray)
-              stream.close()
-              // Return Generated Files (for further processing)
-              output
-            }).toSet
+                  createdOutputStream
+                }
+                if stream.size > 0
+              } yield {
+                val t = targetFolder / outputFolder
+                t mkdirs()
+                val output = t / outFile
+                out.log.info("Writing Group File: [%s] with type [%s] to: %s" format(groupName, suffix, output.getAbsolutePath))
+                IO.write(output, stream.toByteArray)
+                stream.close()
+                // Return Generated Files (for further processing)
+                output
+              }).toSet
           }
 
           // All potential changed files:
-          cachedCompile(allResources.map { r =>
-            val wroResource = contextFolder / r.getUri
-            wroResource
+          cachedCompile(allResources.map {
+            r =>
+              val wroResource = contextFolder / r.getUri
+              wroResource
           }.get.toSet)
 
         } else {
