@@ -6,7 +6,7 @@ name := "xsbt-wro4j-plugin"
 
 version := "0.3.1-SNAPSHOT"
 
-scalaVersion := "2.10.0"
+scalaVersion := "2.10.2"
 
 sbtPlugin := true
 
