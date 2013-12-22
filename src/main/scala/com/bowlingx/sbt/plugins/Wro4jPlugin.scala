@@ -76,8 +76,8 @@ object Wro4jPlugin extends Plugin {
 
   private[this] def managerFactory(m: Manager) = {
     val context = new StandaloneContext()
-    context.setIgnoreMissingResources(true)
-    context.setContextFolder(m.contextFolder)
+    context.setIgnoreMissingResourcesAsString("true")
+    context.setContextFoldersAsCSV(m.contextFolder.getAbsolutePath)
     context.setWroFile(m.wroFile)
     context.setMinimize(true)
 
