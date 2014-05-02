@@ -20,7 +20,7 @@ resolvers += Resolver.url("sbt-plugin-snapshots",
   new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-snapshots/"))(
     Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.bowlingx" %% "xsbt-wro4j-plugin" % "0.3.1-SNAPSHOT")
+addSbtPlugin("com.bowlingx" %% "xsbt-wro4j-plugin" % "0.3.3")
 
 ```
 
@@ -93,6 +93,32 @@ postProcessors = yuiCssMin,copyrightMin
     </group>
 
 </groups>
+
+```
+
+## Webjars
+
+This Plugin supports webjars annotation:
+
+```xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<groups xmlns="http://www.isdc.ro/wro"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.isdc.ro/wro wro.xsd">
+
+    <group name="scripts">
+        <js>webjar:dropzone.js</js>
+    </group>
+
+</groups>
+
+```
+
+```scala
+libraryDependencies ++= Seq(
+  "org.webjars" % "dropzone" % "3.7.1"
+)
 
 ```
 
