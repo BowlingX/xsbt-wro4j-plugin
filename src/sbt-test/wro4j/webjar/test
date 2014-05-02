@@ -1,0 +1,3 @@
+# check if the file gets created
+> package
+$ exists target/wro4j/compiled/scripts.js

@@ -25,13 +25,19 @@ import ro.isdc.wro.config._
 import org.mockito.Mockito
 import javax.servlet.http.{HttpServletResponse, HttpServletRequest}
 import ro.isdc.wro.http.support.DelegatingServletOutputStream
-import java.io.{FileInputStream, ByteArrayOutputStream}
+import java.io.{InputStream, FileInputStream, ByteArrayOutputStream}
 import javax.servlet.FilterConfig
 import ro.isdc.wro.model.resource.processor.factory.ConfigurableProcessorsFactory
 import ro.isdc.wro.model.resource.ResourceType
 import java.util.Properties
 import ro.isdc.wro.util.provider.ConfigurableProviderSupport
 import ro.isdc.wro.model.WroModelInspector
+import ro.isdc.wro.model.resource.locator.factory.SimpleUriLocatorFactory
+import ro.isdc.wro.extensions.locator.WebjarUriLocator
+import ro.isdc.wro.model.resource.locator.StandaloneServletContextUriLocator
+import org.webjars.WebJarAssetLocator
+import java.util.regex.Pattern
+import java.net.URLClassLoader
 
 /**
  * A wro4j SBT Plugin
@@ -72,7 +78,8 @@ object Wro4jPlugin extends Plugin {
 
   import Wro4jKeys._
 
-  case class Manager(contextFolder: File, wroFile: File, propertiesFile: File, provider: ConfigurableProviderSupport)
+  case class Manager(contextFolder: File, wroFile: File, propertiesFile: File,
+                     provider: ConfigurableProviderSupport, log: Logger, cp: ClassLoader)
 
   private[this] def managerFactory(m: Manager) = {
     val context = new StandaloneContext()
@@ -94,14 +101,27 @@ object Wro4jPlugin extends Plugin {
 
     managerFactory.setProcessorsFactory(configurable)
 
+    val uriLocator = new SimpleUriLocatorFactory()
+    uriLocator.addLocator(new WebjarUriLocator() {
+      override def locate(uri: String): InputStream = {
+        val locator = new WebJarAssetLocator(WebJarAssetLocator.getFullPathIndex(Pattern.compile(".*"), m.cp))
+        m.cp.getResourceAsStream(locator.getFullPath(uri.replace(WebjarUriLocator.PREFIX, "")))
+      }
+    })
+      .addLocator(new StandaloneServletContextUriLocator(context))
+
+    managerFactory.setUriLocatorFactory(uriLocator)
+
     managerFactory.create()
   }
 
   def wro4jStartTask =
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
       wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
-      targetFolder in generateResources, processorProvider in generateResources, name in generateResources, cacheFolder in generateResources) map {
-      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider, projectName, cache) =>
+      targetFolder in generateResources, processorProvider in generateResources, name in generateResources,
+      cacheFolder in generateResources, externalDependencyClasspath in Runtime) map {
+      (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider,
+       projectName, cache, rt) =>
         out.log.info("wro4j: == Generating Web-Resources for %s ==" format projectName)
 
         // Update context Classpath
@@ -109,24 +129,30 @@ object Wro4jPlugin extends Plugin {
 
         Context.set(Context.standaloneContext())
 
+        // External Dependencies
+        val urls = rt.map(f => f.data.toURI.toURL).toArray
+
         out.log.info("wro4j-context: %s" format contextFolder.getAbsolutePath)
         out.log.info("wro4j-xml-file: %s" format wroFile.getAbsolutePath)
         out.log.info("wro4j-properties-file: %s" format propertiesFile.getAbsolutePath)
 
         if (contextFolder.exists() && wroFile.exists() && propertiesFile.exists()) {
           import scala.collection.JavaConversions._
-          val factory = managerFactory(Manager(contextFolder, wroFile, propertiesFile, processorProvider))
+          val factory = managerFactory(Manager(contextFolder, wroFile, propertiesFile, processorProvider, out.log,
+            new URLClassLoader(urls)))
 
           val inspector = new WroModelInspector(factory.getModelFactory.create())
           val allResources = inspector.getAllUniqueResources
 
-          val cachedCompile = FileFunction.cached(cache)(inStyle = FilesInfo.lastModified, outStyle = FilesInfo.exists) {
+          val cachedCompile = FileFunction.cached(cache)(inStyle = FilesInfo.lastModified,
+            outStyle = FilesInfo.exists) {
             (in: ChangeReport[File], outFiles: ChangeReport[File]) =>
 
-            // Find groups that did change
+              // Find groups that did change
               val groupNames = in.modified.flatMap(r => {
                 // We need to replace the context path with found file path before wro4j work's with relative path
-                val groupNames = inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
+                val groupNames = inspector.getGroupNamesContainingResource(
+                  r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
 
                 groupNames.toSet
               })
@@ -148,7 +174,8 @@ object Wro4jPlugin extends Plugin {
                   // Mock Response, write everything in ByteArray instead of delivering to Browser :)
                   val response = Mockito.mock(classOf[HttpServletResponse])
                   val createdOutputStream = new ByteArrayOutputStream()
-                  Mockito.when(response.getOutputStream).thenReturn(new DelegatingServletOutputStream(createdOutputStream))
+                  Mockito.when(response.getOutputStream).thenReturn(
+                    new DelegatingServletOutputStream(createdOutputStream))
 
                   // Initilize WebContext
                   val conf = Context.get().getConfig
