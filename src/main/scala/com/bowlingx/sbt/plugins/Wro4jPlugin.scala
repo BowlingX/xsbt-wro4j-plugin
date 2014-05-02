@@ -157,10 +157,19 @@ object Wro4jPlugin extends Plugin {
                 groupNames.toSet
               })
 
+              // Find Groups that contain webjar resources, we are not able to watch for changes at the moment
+              val groups = inspector.getGroupNames
+              val webjarGroups = groups.map(g => inspector.getGroupByName(g)).map(g => g.getName -> g.getResources.filter(
+                _.getUri.startsWith(WebjarUriLocator.PREFIX))).toMap.filter(_._2.length > 0).keySet
+
+              if(webjarGroups.size > 0) {
+                out.log.info(s"Found ${webjarGroups.size} WebJar Groups, its not possible to detect code change here...")
+              }
+
               // Generate resources for Groups:
               (for {
                 suffix <- ResourceType.values()
-                groupName <- groupNames
+                groupName <- groupNames ++ webjarGroups
                 relative = outputFolder
                 outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
                 outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)
