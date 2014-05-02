@@ -4,7 +4,6 @@
         xsi:schemaLocation="http://www.isdc.ro/wro wro.xsd">
 
     <group name="scripts">
-        <js>/static/test.js</js>
         <js>webjar:dropzone.js</js>
     </group>
 
