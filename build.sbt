@@ -4,7 +4,7 @@ organization := "com.bowlingx"
 
 name := "xsbt-wro4j-plugin"
 
-version := "0.3.5"
+version := "0.3.6-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 
