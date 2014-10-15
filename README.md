@@ -1,5 +1,6 @@
 xsbt-wro4j-plugin [![Build Status](http://jenkins.backchat.io/job/xsbt-wro4j-plugin/badge/icon)](https://jenkins.backchat.io/job/xsbt-wro4j-plugin/)
 ==========
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/BowlingX/xsbt-wro4j-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 This plugin provides a Wrapper for http://code.google.com/p/wro4j/
 
