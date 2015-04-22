@@ -38,6 +38,8 @@ import ro.isdc.wro.model.resource.locator.StandaloneServletContextUriLocator
 import org.webjars.WebJarAssetLocator
 import java.util.regex.Pattern
 import java.net.URLClassLoader
+import ro.isdc.wro.model.resource.locator.ClasspathUriLocator
+import ro.isdc.wro.model.resource.locator.ClasspathUriLocator2
 
 /**
  * A wro4j SBT Plugin
@@ -108,7 +110,17 @@ object Wro4jPlugin extends Plugin {
         m.cp.getResourceAsStream(locator.getFullPath(uri.replace(WebjarUriLocator.PREFIX, "")))
       }
     })
-      .addLocator(new StandaloneServletContextUriLocator(context))
+      //.addLocator(new StandaloneServletContextUriLocator(context))
+      .addLocator(new ClasspathUriLocator2() {
+        override def locate(uri: String): InputStream = {
+          m.log.info("locating class path resource " + uri);
+          super.locate2(uri, m.cp);
+          //val locator = new ClasspathA(WebJarAssetLocator.getFullPathIndex(Pattern.compile(".*"), m.cp))
+        //m.cp.getResourceAsStream(locator.getFullPath(uri.replace(WebjarUriLocator.PREFIX, "")))
+      }
+       
+      
+      })
 
     managerFactory.setUriLocatorFactory(uriLocator)
 
@@ -119,7 +131,7 @@ object Wro4jPlugin extends Plugin {
     (streams, sourceDirectory in generateResources, outputFolder in generateResources,
       wroFile in generateResources, contextFolder in generateResources, propertiesFile in generateResources,
       targetFolder in generateResources, processorProvider in generateResources, name in generateResources,
-      cacheFolder in generateResources, externalDependencyClasspath in Runtime) map {
+      cacheFolder in generateResources, fullClasspath in Compile) map {
       (out, sourcesDir, outputFolder, wroFile, contextFolder, propertiesFile, targetFolder, processorProvider,
        projectName, cache, rt) =>
         out.log.info("wro4j: == Generating Web-Resources for %s ==" format projectName)
@@ -132,6 +144,8 @@ object Wro4jPlugin extends Plugin {
         // External Dependencies
         val urls = rt.map(f => f.data.toURI.toURL).toArray
 
+        rt.map { x => out.log("*** Url: " + x) }
+        
         out.log.info("wro4j-context: %s" format contextFolder.getAbsolutePath)
         out.log.info("wro4j-xml-file: %s" format wroFile.getAbsolutePath)
         out.log.info("wro4j-properties-file: %s" format propertiesFile.getAbsolutePath)
@@ -141,22 +155,42 @@ object Wro4jPlugin extends Plugin {
           val factory = managerFactory(Manager(contextFolder, wroFile, propertiesFile, processorProvider, out.log,
             new URLClassLoader(urls)))
 
+          
+          
           val inspector = new WroModelInspector(factory.getModelFactory.create())
           val allResources = inspector.getAllUniqueResources
 
+          allResources.map { 
+                    r => out.log.info("all web resources: " + r.getUri); 
+               }
+          
           val cachedCompile = FileFunction.cached(cache)(inStyle = FilesInfo.lastModified,
             outStyle = FilesInfo.exists) {
             (in: ChangeReport[File], outFiles: ChangeReport[File]) =>
 
+              
+              in.modified.map { 
+                    r => out.log.info("Modified web resource: " + r.getAbsolutePath); 
+                    out.log.info("Context path " + contextFolder.getAbsolutePath); 
+               }
+              
               // Find groups that did change
               val groupNames = in.modified.flatMap(r => {
                 // We need to replace the context path with found file path before wro4j work's with relative path
-                val groupNames = inspector.getGroupNamesContainingResource(
-                  r.getAbsolutePath.replace(contextFolder.getAbsolutePath, ""))
-
-                groupNames.toSet
+                
+                  
+                if (r.getAbsolutePath.startsWith(contextFolder.getAbsolutePath)) 
+                     inspector.getGroupNamesContainingResource(r.getAbsolutePath.replace(contextFolder.getAbsolutePath, "")).toSet
+                else  {
+                    val g = r.getAbsolutePath.replace( (targetFolder / outputFolder).getAbsolutePath, "")
+                    .replace(java.io.File.separator, "").replace(".css", "").replace(".js", "");
+                    out.log.info("group: " + g)
+                    Set(inspector.getGroupByName(g).getName)
+                }
               })
-
+              
+             // groupNames.map { x => out.log.info("Helo There" + x); }
+              
               // Find Groups that contain webjar resources, we are not able to watch for changes at the moment
               val groups = inspector.getGroupNames
               val webjarGroups = groups.map(g => inspector.getGroupByName(g)).map(g => g.getName -> g.getResources.filter(
@@ -209,9 +243,34 @@ object Wro4jPlugin extends Plugin {
 
           // All potential changed files:
           cachedCompile(allResources.map {
-            r =>
-              val wroResource = contextFolder / r.getUri
-              wroResource
+            r =>{
+              
+              out.log.info("resource " + r.getType + " - " + r.getUri)
+              if (!r.getUri.startsWith("/classpath:")) {
+                  val wroResource = contextFolder / r.getUri
+                  wroResource
+                }
+              else {
+            	  var outputFileName = "";
+                inspector.getGroupNamesContainingResource(r.getUri).map { 
+                  g => {
+                      val group = inspector.getGroupByName(g);
+                      val suffix = r.getType;
+                      val groupName = g
+                      val relative = outputFolder
+                      val outFile = "%s.%s" format(groupName, suffix.toString.toLowerCase)
+                      outputFileName = "/%s/%s.%s" format(relative, groupName, suffix.toString.toLowerCase)                    
+                      
+                      out.log.info("out file: " + outputFileName)
+                  }
+                }
+                
+                val wroResource = targetFolder / outputFileName
+                
+                 out.log.info("out file: " + wroResource.getAbsolutePath)
+                wroResource
+              }
+            }
           }.get.toSet)
 
         } else {
