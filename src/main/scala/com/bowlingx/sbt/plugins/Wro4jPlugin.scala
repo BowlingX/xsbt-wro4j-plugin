@@ -144,7 +144,7 @@ object Wro4jPlugin extends Plugin {
         // External Dependencies
         val urls = rt.map(f => f.data.toURI.toURL).toArray
 
-        rt.map { x => out.log("*** Url: " + x) }
+        //rt.map { x => out.log("*** Url: " + x) }
         
         out.log.info("wro4j-context: %s" format contextFolder.getAbsolutePath)
         out.log.info("wro4j-xml-file: %s" format wroFile.getAbsolutePath)
