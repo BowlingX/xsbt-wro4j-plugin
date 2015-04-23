@@ -1,10 +1,12 @@
 import xml.Group
 
+import bintray.Keys._
+
 organization := "com.bowlingx"
 
 name := "xsbt-wro4j-plugin"
 
-version := "0.3.6.1-SNAPSHOT"
+version := "0.3.6.1"
 
 scalaVersion := "2.10.3"
 
@@ -31,14 +33,20 @@ libraryDependencies ++= Seq(
 
 publishMavenStyle := false
 
-publishTo <<= (version) { version: String =>
-   val scalasbt = "http://scalasbt.artifactoryonline.com/scalasbt/"
-   val (name, url) = if (version.contains("-SNAPSHOT"))
-                       ("scalasbt-sbt-plugin-snapshots", scalasbt+"sbt-plugin-snapshots")
-                     else
-                       ("scalasbt-sbt-plugin-releases", scalasbt+"sbt-plugin-releases")
-   Some(Resolver.url(name, new URL(url))(Resolver.ivyStylePatterns))
-}
+seq(bintrayPublishSettings:_*)
+
+repository in bintray := "sbt-plugins"
+ 
+bintrayOrganization in bintray := None
+    
+//publishTo <<= (version) { version: String =>
+//   val scalasbt = "http://scalasbt.artifactoryonline.com/scalasbt/"
+//   val (name, url) = if (version.contains("-SNAPSHOT"))
+//                       ("scalasbt-sbt-plugin-snapshots", scalasbt+"sbt-plugin-snapshots")
+//                     else
+//                       ("scalasbt-sbt-plugin-releases", scalasbt+"sbt-plugin-releases")
+//   Some(Resolver.url(name, new URL(url))(Resolver.ivyStylePatterns))
+//}
 
 publishArtifact in Test := false
 
