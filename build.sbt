@@ -6,7 +6,7 @@ organization := "com.bowlingx"
 
 name := "xsbt-wro4j-plugin"
 
-version := "0.3.6.2"
+version := "0.3.6.3"
 
 scalaVersion := "2.10.3"
 
@@ -24,7 +24,7 @@ scalacOptions += "-deprecation"
 
 libraryDependencies ++= Seq(
    "commons-logging" % "commons-logging" % "1.1.1" % "provided",
-   "ch.qos.logback" % "logback-classic" % "1.0.7" ,
+   "org.slf4j" % "slf4j-api" % "1.7.12" ,
    "org.mockito" % "mockito-core" % "1.9.5",
    "javax.servlet" % "javax.servlet-api" % "3.1.0",
    "ro.isdc.wro4j" % "wro4j-core" % "1.7.7" excludeAll(ExclusionRule(organization = "org.slf4j")),

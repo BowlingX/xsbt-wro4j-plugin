@@ -110,7 +110,7 @@ object Wro4jPlugin extends Plugin {
         m.cp.getResourceAsStream(locator.getFullPath(uri.replace(WebjarUriLocator.PREFIX, "")))
       }
     })
-      //.addLocator(new StandaloneServletContextUriLocator(context))
+      .addLocator(new StandaloneServletContextUriLocator(context))
       .addLocator(new ClasspathUriLocator2() {
         override def locate(uri: String): InputStream = {
           m.log.info("locating class path resource " + uri);
@@ -155,8 +155,6 @@ object Wro4jPlugin extends Plugin {
           val factory = managerFactory(Manager(contextFolder, wroFile, propertiesFile, processorProvider, out.log,
             new URLClassLoader(urls)))
 
-          
-          
           val inspector = new WroModelInspector(factory.getModelFactory.create())
           val allResources = inspector.getAllUniqueResources
 
