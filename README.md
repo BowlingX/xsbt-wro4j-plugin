@@ -2,6 +2,8 @@ xsbt-wro4j-plugin [![Build Status](http://jenkins.backchat.io/job/xsbt-wro4j-plu
 ==========
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/BowlingX/xsbt-wro4j-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+**DEPRECATED: This plugin is not developed anymore. If you search for asset management with webpack for play, please checkout https://github.com/BowlingX/play-webpack**
+
 This plugin provides a Wrapper for http://code.google.com/p/wro4j/
 
 Inspired by wro4j-maven-plugin:
